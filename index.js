@@ -77,5 +77,48 @@ client.on('messageCreate', async (message) => {
         message.reply('⏹ Music bot is still ongoing, fixing... - maki');
     }
 });
+
+// Load or initialize bot data
+let botData = {};
+if (fs.existsSync('./botData.json')) {
+    botData = JSON.parse(fs.readFileSync('./botData.json'));
+}
+
+const rulesMessage = `
+➭ Nicknames should be minor-friendly. 
+
+➭ Keep the talk to appropriate channels. Strictly no VC trolling. 
+
+➭ DOXXING IS STRICTLY FORBIDDEN. Leaking pictures, or sharing any personal information without any given consent is considered doxxing. If caught or reported you will be punished.
+
+➭ Don't use offensive language towards anyone who could potentially be sensitive or take offence to it. The rule of thumb should be: if you don't know their boundaries, don't do it. Examples of offensive language are racial slurs and gender slurs. No racist, homophobic, sexist, or otherwise hateful speech or material. THIS SERVER DOES NOT TOLERATE SUCH BEHAVIOUR.
+
+➭ No harassment of other server members. This includes trolling, baiting, inappropriate DMs, reaction spam, bullying, etc. If a member asks you to stop what you are doing to them, then stop.
+
+➭ No posting of advertisements without the approval of the Server Administrators.
+
+➭ No promotion of other servers. 
+
+➭ No inappropriate/NSFW media including profile images.
+
+➭ Treat other people with respect. Be kind and considerate. Not everyone is the same as you; we all have different boundaries.
+
+**1st offense:** Warning  
+**2nd offense:** 1 month timeout  
+**3rd offense:** Ban
+`;
+
+client.on('ready', async () => {
+    const rulesChannel = client.channels.cache.get('1490024721021014156'); // <-- Replace with your channel ID
+
+    if (!botData[rulesChannel.id] || !botData[rulesChannel.id].rulesSent) {
+        await rulesChannel.send(rulesMessage);
+
+        botData[rulesChannel.id] = { rulesSent: true };
+        fs.writeFileSync('./botData.json', JSON.stringify(botData, null, 4));
+    }
+});
+
+
 console.log("TOKEN exists?", process.env.TOKEN ? "Yes" : "No");
 client.login(process.env.TOKEN);
