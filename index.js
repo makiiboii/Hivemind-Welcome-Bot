@@ -77,5 +77,5 @@ client.on('messageCreate', async (message) => {
         message.reply('⏹ Music bot is still ongoing, fixing... - maki');
     }
 });
-
-client.login('MTQ4OTM0MTA3NzE4MDc3NjQ2OA.G2wpnT.OdfHy3ZOCov-6V2saVPsChfLKTPKCpDy2EQHr4');
+console.log("TOKEN exists?", process.env.TOKEN ? "Yes" : "No");
+client.login(process.env.TOKEN);
