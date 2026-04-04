@@ -23,7 +23,6 @@ const tempVCMap = new Map(); // guildId -> temp channel ID
 client.on('voiceStateUpdate', async (oldState, newState) => {
     const guildId = newState.guild.id;
     const tempVCCategoryId = "1489361873915744387"; // Replace with your VC category ID
-    const tempVCName = "🎧 Temporary VC";
 
     // User joins a specific "create temp VC" channel
     if (newState.channelId === "1489359665157505135") {
@@ -78,12 +77,7 @@ client.on('messageCreate', async (message) => {
     }
 });
 
-// Load or initialize bot data
-let botData = {};
-if (fs.existsSync('./botData.json')) {
-    botData = JSON.parse(fs.readFileSync('./botData.json'));
-}
-
+// ===== Rules message =====
 const rulesMessage = `
 ➭ Nicknames should be minor-friendly. 
 
@@ -108,17 +102,23 @@ const rulesMessage = `
 **3rd offense:** Ban
 `;
 
+// Temporary in-memory flag to prevent resending
+let rulesSent = false;
+
 client.on('ready', async () => {
-    const rulesChannel = client.channels.cache.get('1490024721021014156'); // <-- Replace with your channel ID
+    console.log(`Logged in as ${client.user.tag}`);
 
-    if (!botData[rulesChannel.id] || !botData[rulesChannel.id].rulesSent) {
-        await rulesChannel.send(rulesMessage);
+    try {
+        const rulesChannel = await client.channels.fetch('1490024721021014156'); // <-- Replace with your rules channel ID
 
-        botData[rulesChannel.id] = { rulesSent: true };
-        fs.writeFileSync('./botData.json', JSON.stringify(botData, null, 4));
+        if (!rulesSent) {
+            await rulesChannel.send(rulesMessage);
+            rulesSent = true;
+        }
+    } catch (err) {
+        console.error('Failed to send rules:', err);
     }
 });
-
 
 console.log("TOKEN exists?", process.env.TOKEN ? "Yes" : "No");
 client.login(process.env.TOKEN);
