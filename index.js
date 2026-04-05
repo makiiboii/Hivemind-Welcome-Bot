@@ -39,7 +39,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
       tempVCs.set(tempChannel.id, newState.member.id);
       await newState.setChannel(tempChannel);
 
-      // 🎨 VC embed
+      // 🎨 Modern VC welcome embed
       const welcomeEmbed = new EmbedBuilder()
         .setColor('#00FFFF')
         .setTitle(`👋 Welcome ${newState.member.user.username}!`)
@@ -137,8 +137,12 @@ client.on('messageCreate', async (message) => {
       }
     }
 
-    if (!kicked.length) return message.reply('❌ No one could be kicked');
-    return message.reply(`✅ Kicked: ${kicked.join(', ')}`);
+    // delete your command message
+    await message.delete().catch(() => {});
+
+    if (!kicked.length) return message.channel.send('❌ No one could be kicked');
+    const rulesChannel = message.guild.channels.cache.get(RULES_CHANNEL_ID);
+    return message.channel.send(`✅ Kicked: ${kicked.join(', ')}\n⚠️ Please read the rules here: ${rulesChannel ? rulesChannel.toString() : 'the rules channel'} so this doesn’t happen again!`);
   }
 
   // ===== BAN =====
@@ -158,43 +162,45 @@ client.on('messageCreate', async (message) => {
       }
     }
 
-    if (!banned.length) return message.reply('❌ No one could be banned');
-    return message.reply(`✅ Banned: ${banned.join(', ')}`);
+    // delete your command message
+    await message.delete().catch(() => {});
+
+    if (!banned.length) return message.channel.send('❌ No one could be banned');
+    const rulesChannel = message.guild.channels.cache.get(RULES_CHANNEL_ID);
+    return message.channel.send(`✅ Banned: ${banned.join(', ')}\n⚠️ Please read the rules here: ${rulesChannel ? rulesChannel.toString() : 'the rules channel'} so this doesn’t happen again!`);
   }
 
   // ===== TEMP VC COMMANDS =====
   const vc = message.member.voice.channel;
-  if (vc && tempVCs.has(vc.id) && tempVCs.get(vc.id) === message.member.id) {
+  if (!vc || !tempVCs.has(vc.id)) return;
+  if (tempVCs.get(vc.id) !== message.member.id) return;
 
-    if (command === 'limit') {
-      const limit = parseInt(args[0]);
-      if (!isNaN(limit) && limit >= 0 && limit <= 99) {
-        await vc.setUserLimit(limit);
-        return message.reply(`✅ Limit set to ${limit}`);
-      }
-    }
+  if (command === 'limit') {
+    const limit = parseInt(args[0]);
+    if (isNaN(limit) || limit < 0 || limit > 99) return;
+    await vc.setUserLimit(limit);
+    return message.reply(`✅ Limit set to ${limit}`);
+  }
 
-    if (command === 'lock') {
-      await vc.permissionOverwrites.edit(message.guild.roles.everyone, { Connect: false });
-      return message.reply('🔒 VC locked');
-    }
+  if (command === 'lock') {
+    await vc.permissionOverwrites.edit(message.guild.roles.everyone, { Connect: false });
+    return message.reply('🔒 VC locked');
+  }
 
-    if (command === 'unlock') {
-      await vc.permissionOverwrites.edit(message.guild.roles.everyone, { Connect: true });
-      return message.reply('🔓 VC unlocked');
-    }
+  if (command === 'unlock') {
+    await vc.permissionOverwrites.edit(message.guild.roles.everyone, { Connect: true });
+    return message.reply('🔓 VC unlocked');
+  }
 
-    if (command === 'name') {
-      const newName = args.join(' ');
-      if (newName) {
-        await vc.setName(newName);
-        return message.reply(`✅ Renamed to ${newName}`);
-      }
-    }
+  if (command === 'name') {
+    const newName = args.join(' ');
+    if (!newName) return;
+    await vc.setName(newName);
+    return message.reply(`✅ Renamed to ${newName}`);
+  }
 
-    if (command === 'play') {
-      return message.reply('🎵 Music bot still fixing...');
-    }
+  if (command === 'play') {
+    return message.reply('🎵 Music bot still fixing...');
   }
 });
 
