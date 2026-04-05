@@ -1,57 +1,9 @@
+// ===== COMMANDS =====
 client.on('messageCreate', async (message) => {
-  if (!message.guild || message.author.bot) return;
-  if (!message.content.startsWith(PREFIX)) return;
+  if (!message.guild || !message.content.startsWith(PREFIX)) return;
 
   const args = message.content.slice(PREFIX.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
-
-  // =========================
-  // 🔥 KICK COMMAND (NO VC NEEDED)
-  // =========================
-  if (command === 'kick') {
-    if (!message.member.permissions.has('KickMembers')) {
-      return message.reply("❌ You don't have permission to kick members.");
-    }
-
-    const member = message.mentions.members.first();
-    if (!member) return message.reply("❌ Mention a user to kick.");
-
-    if (!member.kickable) return message.reply("❌ I cannot kick this user.");
-
-    try {
-      await member.kick();
-      return message.channel.send(`✅ ${member.user.tag} has been kicked.`);
-    } catch (err) {
-      console.error(err);
-      return message.reply("❌ Failed to kick user.");
-    }
-  }
-
-  // =========================
-  // 🔥 BAN COMMAND (NO VC NEEDED)
-  // =========================
-  if (command === 'ban') {
-    if (!message.member.permissions.has('BanMembers')) {
-      return message.reply("❌ You don't have permission to ban members.");
-    }
-
-    const member = message.mentions.members.first();
-    if (!member) return message.reply("❌ Mention a user to ban.");
-
-    if (!member.bannable) return message.reply("❌ I cannot ban this user.");
-
-    try {
-      await member.ban({ reason: "No reason provided" });
-      return message.channel.send(`🚫 ${member.user.tag} has been banned.`);
-    } catch (err) {
-      console.error(err);
-      return message.reply("❌ Failed to ban user.");
-    }
-  }
-
-  // =========================
-  // 🎧 YOUR ORIGINAL VC SYSTEM (UNCHANGED)
-  // =========================
 
   const vc = message.member.voice.channel;
 
@@ -105,4 +57,67 @@ client.on('messageCreate', async (message) => {
   if (command === 'play') {
     return message.reply('🎵 Music bot still fixing...');
   }
+
+  // ===== MULTI-KICK =====
+  if (command === 'kick') {
+    if (!message.member.permissions.has('KickMembers')) {
+      return message.reply("❌ You don't have permission to kick members.");
+    }
+
+    const members = message.mentions.members;
+    if (!members.size) return message.reply("❌ Mention at least one user to kick.");
+
+    const kicked = [];
+    const failed = [];
+
+    for (const [id, member] of members) {
+      if (!member.kickable) {
+        failed.push(member.user.tag);
+        continue;
+      }
+      try {
+        await member.kick();
+        kicked.push(member.user.tag);
+      } catch {
+        failed.push(member.user.tag);
+      }
+    }
+
+    let reply = '';
+    if (kicked.length) reply += `✅ Kicked: ${kicked.join(', ')}\n`;
+    if (failed.length) reply += `❌ Failed: ${failed.join(', ')}`;
+    return message.channel.send(reply);
+  }
+
+  // ===== MULTI-BAN =====
+  if (command === 'ban') {
+    if (!message.member.permissions.has('BanMembers')) {
+      return message.reply("❌ You don't have permission to ban members.");
+    }
+
+    const members = message.mentions.members;
+    if (!members.size) return message.reply("❌ Mention at least one user to ban.");
+
+    const banned = [];
+    const failed = [];
+
+    for (const [id, member] of members) {
+      if (!member.bannable) {
+        failed.push(member.user.tag);
+        continue;
+      }
+      try {
+        await member.ban({ reason: 'Banned via bot command' });
+        banned.push(member.user.tag);
+      } catch {
+        failed.push(member.user.tag);
+      }
+    }
+
+    let reply = '';
+    if (banned.length) reply += `✅ Banned: ${banned.join(', ')}\n`;
+    if (failed.length) reply += `❌ Failed: ${failed.join(', ')}`;
+    return message.channel.send(reply);
+  }
+
 });
