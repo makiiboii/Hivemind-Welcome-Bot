@@ -120,69 +120,17 @@ client.on('messageCreate', async (message) => {
   const args = message.content.slice(PREFIX.length).trim().split(/ +/);
   const command = args.shift().toLowerCase();
 
-  const vc = message.member.voice.channel;
-
-  // ❌ must be in VC
-  if (!vc) return message.reply('❌ Join a VC first');
-
-  // ❌ must be temp VC
-  if (!tempVCs.has(vc.id)) return;
-
-  // ❌ must be owner
-  if (tempVCs.get(vc.id) !== message.member.id) {
-    return message.reply('❌ Only owner can use this');
-  }
-
-  // ===== LIMIT =====
-  if (command === 'limit') {
-    const limit = parseInt(args[0]);
-    if (isNaN(limit) || limit < 0 || limit > 99) {
-      return message.reply('❌ Enter 0-99');
-    }
-    await vc.setUserLimit(limit);
-    return message.reply(`✅ Limit set to ${limit}`);
-  }
-
-  // ===== LOCK =====
-  if (command === 'lock') {
-    await vc.permissionOverwrites.edit(message.guild.roles.everyone, {
-      Connect: false
-    });
-    return message.reply('🔒 VC locked');
-  }
-
-  // ===== UNLOCK =====
-  if (command === 'unlock') {
-    await vc.permissionOverwrites.edit(message.guild.roles.everyone, {
-      Connect: true
-    });
-    return message.reply('🔓 VC unlocked');
-  }
-
-  // ===== RENAME =====
-  if (command === 'name') {
-    const newName = args.join(' ');
-    if (!newName) return message.reply('❌ Enter a name');
-
-    await vc.setName(newName);
-    return message.reply(`✅ Renamed to ${newName}`);
-  }
-
-  // ===== PLAY PLACEHOLDER =====
-  if (command === 'play') {
-    return message.reply('🎵 Music bot still fixing...');
-  }
-
   // ===== KICK =====
   if (command === 'kick') {
-    if (!message.member.permissions.has(PermissionsBitField.Flags.KickMembers)) 
+    if (!message.member.permissions.has(PermissionsBitField.Flags.KickMembers))
       return message.reply('❌ You do not have permission to kick');
 
     if (!args.length) return message.reply('❌ Mention users or provide IDs to kick');
 
     const kicked = [];
     for (const userIdOrMention of args) {
-      const member = message.mentions.members.get(userIdOrMention.replace(/\D/g, '')) || await message.guild.members.fetch(userIdOrMention).catch(() => null);
+      const id = userIdOrMention.replace(/\D/g, '');
+      const member = message.guild.members.cache.get(id) || await message.guild.members.fetch(id).catch(() => null);
       if (member && member.kickable) {
         await member.kick().catch(() => null);
         kicked.push(member.user.tag);
@@ -195,14 +143,15 @@ client.on('messageCreate', async (message) => {
 
   // ===== BAN =====
   if (command === 'ban') {
-    if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers)) 
+    if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers))
       return message.reply('❌ You do not have permission to ban');
 
     if (!args.length) return message.reply('❌ Mention users or provide IDs to ban');
 
     const banned = [];
     for (const userIdOrMention of args) {
-      const member = message.mentions.members.get(userIdOrMention.replace(/\D/g, '')) || await message.guild.members.fetch(userIdOrMention).catch(() => null);
+      const id = userIdOrMention.replace(/\D/g, '');
+      const member = message.guild.members.cache.get(id) || await message.guild.members.fetch(id).catch(() => null);
       if (member && member.bannable) {
         await member.ban().catch(() => null);
         banned.push(member.user.tag);
@@ -212,14 +161,47 @@ client.on('messageCreate', async (message) => {
     if (!banned.length) return message.reply('❌ No one could be banned');
     return message.reply(`✅ Banned: ${banned.join(', ')}`);
   }
+
+  // ===== TEMP VC COMMANDS =====
+  const vc = message.member.voice.channel;
+  if (!vc || !tempVCs.has(vc.id)) return;
+  if (tempVCs.get(vc.id) !== message.member.id) return;
+
+  if (command === 'limit') {
+    const limit = parseInt(args[0]);
+    if (isNaN(limit) || limit < 0 || limit > 99) return;
+    await vc.setUserLimit(limit);
+    return message.reply(`✅ Limit set to ${limit}`);
+  }
+
+  if (command === 'lock') {
+    await vc.permissionOverwrites.edit(message.guild.roles.everyone, { Connect: false });
+    return message.reply('🔒 VC locked');
+  }
+
+  if (command === 'unlock') {
+    await vc.permissionOverwrites.edit(message.guild.roles.everyone, { Connect: true });
+    return message.reply('🔓 VC unlocked');
+  }
+
+  if (command === 'name') {
+    const newName = args.join(' ');
+    if (!newName) return;
+    await vc.setName(newName);
+    return message.reply(`✅ Renamed to ${newName}`);
+  }
+
+  if (command === 'play') {
+    return message.reply('🎵 Music bot still fixing...');
+  }
 });
 
 // ===== CLIENT READY =====
-client.once('clientReady', () => {
+client.once('ready', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 
   // ===== MODERN RULES EMBED =====
-  const rulesChannel = client.channels.cache.get(RULES_CHANNEL_ID); 
+  const rulesChannel = client.channels.cache.get(RULES_CHANNEL_ID);
   if (rulesChannel) {
     const rulesEmbed = new EmbedBuilder()
       .setColor('#FF4500')
