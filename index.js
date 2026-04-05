@@ -173,29 +173,30 @@ client.on('messageCreate', async (message) => {
   }
 });
 
-// ===== READY =====
-client.once('ready', () => {
-  console.log(`✅ Logged in as ${client.user.tag}`);
+// ===== MODERN RULES EMBED =====
+const rulesChannel = client.channels.cache.get(RULES_CHANNEL_ID); // replace with your rules channel ID
+if (rulesChannel) {
+  const rulesEmbed = new EmbedBuilder()
+    .setColor('#FF4500') // bright orange/red for emphasis
+    .setTitle('📜 Server Rules')
+    .setDescription('Follow these rules to keep the server safe and fun for everyone!')
+    .addFields(
+      { name: '📝 Nicknames', value: '➭ Nicknames should be minor-friendly.', inline: false },
+      { name: '💬 Channels', value: '➭ Keep the talk to appropriate channels. Strictly no VC trolling.', inline: false },
+      { name: '🚫 Doxxing', value: '➭ DOXXING IS STRICTLY FORBIDDEN. Leaking pictures or personal info without consent will be punished.', inline: false },
+      { name: '❌ Offensive Language', value: '➭ Don’t use racial, gender, or homophobic slurs. Respect boundaries.', inline: false },
+      { name: '🙅 Harassment', value: '➭ No harassment, trolling, baiting, reaction spam, bullying, or inappropriate DMs.', inline: false },
+      { name: '📢 Advertising', value: '➭ No posting advertisements without admin approval.', inline: false },
+      { name: '🌐 Promotion', value: '➭ No promotion of other servers.', inline: false },
+      { name: '🔞 NSFW Content', value: '➭ No inappropriate/NSFW media including profile images.', inline: false },
+      { name: '🤝 Respect', value: '➭ Treat others with respect. Be kind and considerate.', inline: false },
+      { name: '⚠️ Penalties', value: '1️⃣ 1st offense: Warning\n2️⃣ 2nd offense: 1 month timeout\n3️⃣ 3rd offense: Ban', inline: false }
+    )
+    .setFooter({ text: 'Please read carefully! ⚡' })
+    .setTimestamp();
 
-  // ===== SEND RULES EMBED =====
-  const rulesChannel = client.channels.cache.get(RULES_CHANNEL_ID);
-  if (rulesChannel) {
-    const rulesEmbed = new EmbedBuilder()
-      .setColor('#FFA500') // Orange color for rules
-      .setTitle('📜 Server Rules')
-      .setDescription(`
-1️⃣ Be respectful to everyone  
-2️⃣ No spamming or self-promotion  
-3️⃣ Keep channels in their proper topics  
-4️⃣ No NSFW content  
-5️⃣ Follow Discord TOS
-      `)
-      .setFooter({ text: 'Please read and follow the rules!' })
-      .setTimestamp();
-
-    rulesChannel.send({ embeds: [rulesEmbed] }).catch(() => {});
-  }
-});
+  rulesChannel.send({ embeds: [rulesEmbed] }).catch(() => {});
+}
 
 // ===== LOGIN =====
 client.login(process.env.TOKEN);
