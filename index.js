@@ -1,153 +1,170 @@
 // index.js
 
-require('ffmpeg-static');
+require('dotenv').config();
 
-const tempVCs = new Map(); // channelId -> ownerId
 const { Client, GatewayIntentBits, ChannelType } = require('discord.js');
-const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
-const play = require('play-dl');
 
 const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.GuildVoiceStates,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers
-    ]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers
+  ]
 });
 
 const PREFIX = "!";
 
-// ===== Temporary VC setup =====
-const tempVCMap = new Map(); // guildId -> temp channel ID
+// ===== CONFIG =====
+const CREATE_CHANNEL_ID = "1489359665157505135"; // join to create VC
+const CATEGORY_ID = "1489361873915744387"; // VC category
+const WELCOME_CHANNEL_ID = "PUT_YOUR_WELCOME_CHANNEL_ID"; // optional
 
-client.on('voiceStateUpdate', async (oldState, newState) => {
-    const guildId = newState.guild.id;
-    const tempVCCategoryId = "1489361873915744387"; // Replace with your VC category ID
-
-    // User joins a specific "create temp VC" channel
-    if (newState.channelId === "1489359665157505135") {
-        const tempChannel = await newState.guild.channels.create({
-            name: `${newState.member.user.username}'s VC`,
-            type: ChannelType.GuildVoice,
-            parent: tempVCCategoryId,
-            permissionOverwrites: [
-                {
-                    id: newState.member.id,
-                    allow: ['Connect', 'ManageChannels', 'Speak']
-                }
-            ]
-        });
-        tempVCMap.set(guildId, tempChannel.id);
-        await newState.member.voice.setChannel(tempChannel);
-    }
-
-    // Delete empty temp VC
-    if (oldState.channelId && tempVCMap.get(guildId) === oldState.channelId) {
-        const oldChannel = oldState.guild.channels.cache.get(oldState.channelId);
-        if (oldChannel.members.size === 0) {
-            oldChannel.delete();
-            tempVCMap.delete(guildId);
-        }
-    }
-});
-
-// ===== Welcome message =====
-client.on('guildMemberAdd', (member) => {
-    const channel = member.guild.systemChannel; // default system channel
-    if (channel) {
-        channel.send(`👋 Welcome to the server, ${member}!`);
-    }
-});
-
-// ===== Commands =====
-client.on('messageCreate', async (message) => {
-    if (!message.guild || !message.content.startsWith(PREFIX)) return;
-
-    const args = message.content.slice(PREFIX.length).trim().split(/ +/);
-    const command = args.shift().toLowerCase();
-
-    // 🎵 PLAY COMMAND (temporarily disabled)
-    if (command === 'play') {
-        message.reply('🎵 Music bot is still ongoing, fixing... -maki');
-    }
-
-    // ⏹ STOP COMMAND placeholder (optional)
-    if (command === 'stop') {
-        message.reply('⏹ Music bot is still ongoing, fixing... - maki');
-    }
-});
-
-// ===== Rules message =====
-const rulesMessage = `
-➭ Nicknames should be minor-friendly. 
-
-➭ Keep the talk to appropriate channels. Strictly no VC trolling. 
-
-➭ DOXXING IS STRICTLY FORBIDDEN. Leaking pictures, or sharing any personal information without any given consent is considered doxxing. If caught or reported you will be punished.
-
-➭ Don't use offensive language towards anyone who could potentially be sensitive or take offence to it. The rule of thumb should be: if you don't know their boundaries, don't do it. Examples of offensive language are racial slurs and gender slurs. No racist, homophobic, sexist, or otherwise hateful speech or material. THIS SERVER DOES NOT TOLERATE SUCH BEHAVIOUR.
-
-➭ No harassment of other server members. This includes trolling, baiting, inappropriate DMs, reaction spam, bullying, etc. If a member asks you to stop what you are doing to them, then stop.
-
-➭ No posting of advertisements without the approval of the Server Administrators.
-
-➭ No promotion of other servers. 
-
-➭ No inappropriate/NSFW media including profile images.
-
-➭ Treat other people with respect. Be kind and considerate. Not everyone is the same as you; we all have different boundaries.
-
-**1st offense:** Warning  
-**2nd offense:** 1 month timeout  
-**3rd offense:** Ban
-`;
-
-// Temporary in-memory flag to prevent resending
-let rulesSent = false;
-
-client.on('ready', async () => {
-    console.log(`Logged in as ${client.user.tag}`);
-
-    try {
-        const rulesChannel = await client.channels.fetch('1490024721021014156'); // <-- Replace with your rules channel ID
-
-        if (!rulesSent) {
-            await rulesChannel.send(rulesMessage);
-            rulesSent = true;
-        }
-    } catch (err) {
-        console.error('Failed to send rules:', err);
-    }
-});
-// Temporary VC limit participants
+// ===== TEMP VC SYSTEM =====
+const tempVCs = new Map(); // channelId -> ownerId
 const sentHelp = new Set();
 
 client.on('voiceStateUpdate', async (oldState, newState) => {
-  if (!oldState.channel && newState.channel) {
+  try {
+    // 🔥 CREATE TEMP VC
+    if (newState.channelId === CREATE_CHANNEL_ID) {
+      const tempChannel = await newState.guild.channels.create({
+        name: `${newState.member.user.username}'s VC`,
+        type: ChannelType.GuildVoice,
+        parent: CATEGORY_ID,
+        userLimit: 0
+      });
 
-    const vc = newState.channel;
+      tempVCs.set(tempChannel.id, newState.member.id);
 
-    if (tempVCs.has(vc.id)) {
+      await newState.setChannel(tempChannel);
 
-      const key = `${newState.member.id}-${vc.id}`;
-      if (sentHelp.has(key)) return;
-
-      sentHelp.add(key);
-
-      vc.send(`
+      // Send commands info
+      tempChannel.send(`
 👋 Welcome ${newState.member}!
 
-🎛️ **Commands:**
+🎛️ **VC Commands:**
+!limit [1-99]
+!lock
+!unlock
+!name [name]
+      `).catch(() => {});
+    }
+
+    // 🧹 DELETE EMPTY VC
+    if (oldState.channelId && tempVCs.has(oldState.channelId)) {
+      const channel = oldState.guild.channels.cache.get(oldState.channelId);
+
+      if (channel && channel.members.size === 0) {
+        await channel.delete().catch(() => {});
+        tempVCs.delete(oldState.channelId);
+      }
+    }
+
+    // 💬 SEND HELP WHEN JOINING VC
+    if (!oldState.channel && newState.channel) {
+      const vc = newState.channel;
+
+      if (tempVCs.has(vc.id)) {
+        const key = `${newState.member.id}-${vc.id}`;
+        if (sentHelp.has(key)) return;
+
+        sentHelp.add(key);
+
+        vc.send(`
+👋 Welcome ${newState.member}!
+
+🎛️ Commands:
 !limit [number]
 !lock / !unlock
 !name [new name]
-      `).catch(() => {});
+        `).catch(() => {});
+      }
     }
+
+  } catch (err) {
+    console.error("VC Error:", err);
   }
 });
 
+// ===== WELCOME MESSAGE =====
+client.on('guildMemberAdd', member => {
+  const channel = member.guild.channels.cache.get(WELCOME_CHANNEL_ID);
+  if (!channel) return;
 
-console.log("TOKEN exists?", process.env.TOKEN ? "Yes" : "No");
+  channel.send(`🎉 Welcome ${member} to the server!`);
+});
+
+// ===== COMMANDS =====
+client.on('messageCreate', async (message) => {
+  if (!message.guild || !message.content.startsWith(PREFIX)) return;
+
+  const args = message.content.slice(PREFIX.length).trim().split(/ +/);
+  const command = args.shift().toLowerCase();
+
+  const vc = message.member.voice.channel;
+
+  // ❌ must be in VC
+  if (!vc) return message.reply('❌ Join a VC first');
+
+  // ❌ must be temp VC
+  if (!tempVCs.has(vc.id)) return;
+
+  // ❌ must be owner
+  if (tempVCs.get(vc.id) !== message.member.id) {
+    return message.reply('❌ Only owner can use this');
+  }
+
+  // ===== LIMIT =====
+  if (command === 'limit') {
+    const limit = parseInt(args[0]);
+
+    if (isNaN(limit) || limit < 0 || limit > 99) {
+      return message.reply('❌ Enter 0-99');
+    }
+
+    await vc.setUserLimit(limit);
+    return message.reply(`✅ Limit set to ${limit}`);
+  }
+
+  // ===== LOCK =====
+  if (command === 'lock') {
+    await vc.permissionOverwrites.edit(message.guild.roles.everyone, {
+      Connect: false
+    });
+
+    return message.reply('🔒 VC locked');
+  }
+
+  // ===== UNLOCK =====
+  if (command === 'unlock') {
+    await vc.permissionOverwrites.edit(message.guild.roles.everyone, {
+      Connect: true
+    });
+
+    return message.reply('🔓 VC unlocked');
+  }
+
+  // ===== RENAME =====
+  if (command === 'name') {
+    const newName = args.join(' ');
+    if (!newName) return message.reply('❌ Enter a name');
+
+    await vc.setName(newName);
+    return message.reply(`✅ Renamed to ${newName}`);
+  }
+
+  // ===== PLAY PLACEHOLDER =====
+  if (command === 'play') {
+    return message.reply('🎵 Music bot still fixing...');
+  }
+});
+
+// ===== READY =====
+client.once('ready', () => {
+  console.log(`✅ Logged in as ${client.user.tag}`);
+});
+
+// ===== LOGIN =====
 client.login(process.env.TOKEN);
