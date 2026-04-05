@@ -1,6 +1,8 @@
 // index.js
+
 require('ffmpeg-static');
 
+const tempVCs = new Map(); // channelId -> ownerId
 const { Client, GatewayIntentBits, ChannelType } = require('discord.js');
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
 const play = require('play-dl');
@@ -119,6 +121,33 @@ client.on('ready', async () => {
         console.error('Failed to send rules:', err);
     }
 });
+// Temporary VC limit participants
+const sentHelp = new Set();
+
+client.on('voiceStateUpdate', async (oldState, newState) => {
+  if (!oldState.channel && newState.channel) {
+
+    const vc = newState.channel;
+
+    if (tempVCs.has(vc.id)) {
+
+      const key = `${newState.member.id}-${vc.id}`;
+      if (sentHelp.has(key)) return;
+
+      sentHelp.add(key);
+
+      vc.send(`
+👋 Welcome ${newState.member}!
+
+🎛️ **Commands:**
+!limit [number]
+!lock / !unlock
+!name [new name]
+      `).catch(() => {});
+    }
+  }
+});
+
 
 console.log("TOKEN exists?", process.env.TOKEN ? "Yes" : "No");
 client.login(process.env.TOKEN);
