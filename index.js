@@ -17,7 +17,8 @@ const PREFIX = "!";
 // ===== CONFIG =====
 const CREATE_CHANNEL_ID = "1489359665157505135"; // join to create VC
 const CATEGORY_ID = "1489361873915744387"; // VC category
-const WELCOME_CHANNEL_ID = "PUT_YOUR_WELCOME_CHANNEL_ID"; // server welcome
+const WELCOME_CHANNEL_ID = "1489339572738588962"; // server welcome
+const RULES_CHANNEL_ID = "1490024721021014156"; // server rules
 
 // ===== TEMP VC SYSTEM =====
 const tempVCs = new Map(); // channelId -> ownerId
@@ -175,6 +176,25 @@ client.on('messageCreate', async (message) => {
 // ===== READY =====
 client.once('ready', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
+
+  // ===== SEND RULES EMBED =====
+  const rulesChannel = client.channels.cache.get(RULES_CHANNEL_ID);
+  if (rulesChannel) {
+    const rulesEmbed = new EmbedBuilder()
+      .setColor('#FFA500') // Orange color for rules
+      .setTitle('📜 Server Rules')
+      .setDescription(`
+1️⃣ Be respectful to everyone  
+2️⃣ No spamming or self-promotion  
+3️⃣ Keep channels in their proper topics  
+4️⃣ No NSFW content  
+5️⃣ Follow Discord TOS
+      `)
+      .setFooter({ text: 'Please read and follow the rules!' })
+      .setTimestamp();
+
+    rulesChannel.send({ embeds: [rulesEmbed] }).catch(() => {});
+  }
 });
 
 // ===== LOGIN =====
