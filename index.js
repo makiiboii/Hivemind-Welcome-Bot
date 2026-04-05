@@ -27,7 +27,6 @@ const sentHelp = new Set();
 // ===== VOICE STATE UPDATE =====
 client.on('voiceStateUpdate', async (oldState, newState) => {
   try {
-    // 🔥 CREATE TEMP VC
     if (newState.channelId === CREATE_CHANNEL_ID) {
       const tempChannel = await newState.guild.channels.create({
         name: `${newState.member.user.username}'s VC`,
@@ -39,7 +38,6 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
       tempVCs.set(tempChannel.id, newState.member.id);
       await newState.setChannel(tempChannel);
 
-      // 🎨 Modern VC welcome embed
       const welcomeEmbed = new EmbedBuilder()
         .setColor('#00FFFF')
         .setTitle(`👋 Welcome ${newState.member.user.username}!`)
@@ -57,7 +55,6 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
       tempChannel.send({ embeds: [welcomeEmbed] }).catch(() => {});
     }
 
-    // 🧹 DELETE EMPTY VC
     if (oldState.channelId && tempVCs.has(oldState.channelId)) {
       const channel = oldState.guild.channels.cache.get(oldState.channelId);
       if (channel && channel.members.size === 0) {
@@ -66,7 +63,6 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
       }
     }
 
-    // 💬 SEND HELP WHEN JOINING VC
     if (!oldState.channel && newState.channel) {
       const vc = newState.channel;
       if (tempVCs.has(vc.id)) {
@@ -137,12 +133,16 @@ client.on('messageCreate', async (message) => {
       }
     }
 
-    // delete your command message
+    if (!kicked.length) return message.reply('❌ No one could be kicked');
+
+    // Delete your command message
     await message.delete().catch(() => {});
 
-    if (!kicked.length) return message.channel.send('❌ No one could be kicked');
+    // Send reminder in the same channel
     const rulesChannel = message.guild.channels.cache.get(RULES_CHANNEL_ID);
-    return message.channel.send(`✅ Kicked: ${kicked.join(', ')}\n⚠️ Please read the rules here: ${rulesChannel ? rulesChannel.toString() : 'the rules channel'} so this doesn’t happen again!`);
+    return message.channel.send({
+      content: `✅ Kicked: ${kicked.join(', ')}\nPlease read the rules: ${rulesChannel ? rulesChannel.toString() : ''}`
+    });
   }
 
   // ===== BAN =====
@@ -162,12 +162,14 @@ client.on('messageCreate', async (message) => {
       }
     }
 
-    // delete your command message
+    if (!banned.length) return message.reply('❌ No one could be banned');
+
     await message.delete().catch(() => {});
 
-    if (!banned.length) return message.channel.send('❌ No one could be banned');
     const rulesChannel = message.guild.channels.cache.get(RULES_CHANNEL_ID);
-    return message.channel.send(`✅ Banned: ${banned.join(', ')}\n⚠️ Please read the rules here: ${rulesChannel ? rulesChannel.toString() : 'the rules channel'} so this doesn’t happen again!`);
+    return message.channel.send({
+      content: `✅ Banned: ${banned.join(', ')}\nPlease read the rules: ${rulesChannel ? rulesChannel.toString() : ''}`
+    });
   }
 
   // ===== TEMP VC COMMANDS =====
@@ -205,7 +207,7 @@ client.on('messageCreate', async (message) => {
 });
 
 // ===== CLIENT READY =====
-client.once('ready', () => {
+client.once('clientReady', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 
   // ===== MODERN RULES EMBED =====
