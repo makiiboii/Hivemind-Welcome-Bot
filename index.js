@@ -1,7 +1,5 @@
 // index.js
 
-require('dotenv').config();
-
 const { Client, GatewayIntentBits, ChannelType } = require('discord.js');
 
 const client = new Client({
