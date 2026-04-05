@@ -1,6 +1,6 @@
 // index.js
 
-const { Client, GatewayIntentBits, ChannelType, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, ChannelType, EmbedBuilder, PermissionsBitField } = require('discord.js');
 
 const client = new Client({
   intents: [
@@ -24,6 +24,7 @@ const RULES_CHANNEL_ID = "1490024721021014156"; // server rules
 const tempVCs = new Map(); // channelId -> ownerId
 const sentHelp = new Set();
 
+// ===== VOICE STATE UPDATE =====
 client.on('voiceStateUpdate', async (oldState, newState) => {
   try {
     // 🔥 CREATE TEMP VC
@@ -172,61 +173,53 @@ client.on('messageCreate', async (message) => {
     return message.reply('🎵 Music bot still fixing...');
   }
 
-  // ===== KICK MULTIPLE USERS =====
+  // ===== KICK =====
   if (command === 'kick') {
-    if (!args.length) return message.reply('❌ Mention users to kick, separated by space.');
-    const members = args.map(u => {
-      try {
-        return message.guild.members.cache.get(u.replace(/[<@!>]/g, ''));
-      } catch {
-        return null;
+    if (!message.member.permissions.has(PermissionsBitField.Flags.KickMembers)) 
+      return message.reply('❌ You do not have permission to kick');
+
+    if (!args.length) return message.reply('❌ Mention users or provide IDs to kick');
+
+    const kicked = [];
+    for (const userIdOrMention of args) {
+      const member = message.mentions.members.get(userIdOrMention.replace(/\D/g, '')) || await message.guild.members.fetch(userIdOrMention).catch(() => null);
+      if (member && member.kickable) {
+        await member.kick().catch(() => null);
+        kicked.push(member.user.tag);
       }
-    }).filter(m => m && m.voice.channelId === vc.id);
-
-    if (!members.length) return message.reply('❌ No valid members in your VC.');
-
-    let kickedList = [];
-    for (const member of members) {
-      try {
-        await member.voice.disconnect('Kicked by VC owner');
-        kickedList.push(member.user.tag);
-      } catch {}
     }
 
-    return message.reply(`✅ Kicked: ${kickedList.join(', ')}`);
+    if (!kicked.length) return message.reply('❌ No one could be kicked');
+    return message.reply(`✅ Kicked: ${kicked.join(', ')}`);
   }
 
-  // ===== BAN MULTIPLE USERS =====
+  // ===== BAN =====
   if (command === 'ban') {
-    if (!args.length) return message.reply('❌ Mention users to ban, separated by space.');
-    const members = args.map(u => {
-      try {
-        return message.guild.members.cache.get(u.replace(/[<@!>]/g, ''));
-      } catch {
-        return null;
+    if (!message.member.permissions.has(PermissionsBitField.Flags.BanMembers)) 
+      return message.reply('❌ You do not have permission to ban');
+
+    if (!args.length) return message.reply('❌ Mention users or provide IDs to ban');
+
+    const banned = [];
+    for (const userIdOrMention of args) {
+      const member = message.mentions.members.get(userIdOrMention.replace(/\D/g, '')) || await message.guild.members.fetch(userIdOrMention).catch(() => null);
+      if (member && member.bannable) {
+        await member.ban().catch(() => null);
+        banned.push(member.user.tag);
       }
-    }).filter(m => m && m.voice.channelId === vc.id);
-
-    if (!members.length) return message.reply('❌ No valid members in your VC.');
-
-    let bannedList = [];
-    for (const member of members) {
-      try {
-        await member.ban({ reason: 'Banned by VC owner' });
-        bannedList.push(member.user.tag);
-      } catch {}
     }
 
-    return message.reply(`✅ Banned: ${bannedList.join(', ')}`);
+    if (!banned.length) return message.reply('❌ No one could be banned');
+    return message.reply(`✅ Banned: ${banned.join(', ')}`);
   }
 });
 
-// ===== READY =====
-client.once('ready', () => {
+// ===== CLIENT READY =====
+client.once('clientReady', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 
   // ===== MODERN RULES EMBED =====
-  const rulesChannel = client.channels.cache.get(RULES_CHANNEL_ID); // your rules channel ID
+  const rulesChannel = client.channels.cache.get(RULES_CHANNEL_ID); 
   if (rulesChannel) {
     const rulesEmbed = new EmbedBuilder()
       .setColor('#FF4500')
