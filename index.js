@@ -229,8 +229,9 @@ https://hivemind-web-pi.vercel.app/
       { name: '📌 What’s inside?', value: '• Community Updates\n• Server Info\n• Future Features', inline: true },
       { name: '⚡ Status', value: '🟢 Online & Active', inline: true }
     )
-    .setThumbnail(client.user.displayAvatarURL())
-    .setImage('https://i.imgur.com/AfFp7pu.png') // optional banner (you can change/remove)
+    .setThumbnail('https://cdn.discordapp.com/attachments/1460304812456542462/1491848366102020187/hivee.png?ex=69d92f8f&is=69d7de0f&hm=453947fe3dc83bf627024c1afc8f6ac1f0a32892e411f02afd55a4028b7229c5&')
+    //.setImage('YOUR_LOGO_LINK_HERE')
+    //.setImage('https://cdn.discordapp.com/attachments/xxxxx/hivemind.png')
     .setFooter({ text: 'Hivemind • Stay Connected', iconURL: client.user.displayAvatarURL() })
     .setTimestamp();
 
