@@ -210,6 +210,19 @@ client.on('messageCreate', async (message) => {
 client.once('clientReady', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 
+  // ===== SEND WEBSITE LINK =====
+const webChannel = client.channels.cache.get(1490732045083607040);
+if (webChannel) {
+  const webEmbed = new EmbedBuilder()
+    .setColor('#00BFFF')
+    .setTitle('🌐 Hivemind Website')
+    .setDescription('🚀 Check out our official website below:\n\n🔗 https://hivemind-web-pi.vercel.app/')
+    .setFooter({ text: 'Stay connected with us!' })
+    .setTimestamp();
+
+  webChannel.send({ embeds: [webEmbed] }).catch(() => {});
+}
+
   // ===== MODERN RULES EMBED =====
   const rulesChannel = client.channels.cache.get(RULES_CHANNEL_ID);
   if (rulesChannel) {
