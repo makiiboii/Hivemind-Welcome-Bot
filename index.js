@@ -210,7 +210,7 @@ client.on('messageCreate', async (message) => {
 client.once('clientReady', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 
- // ===== SEND WEBSITE LINK (MODERN) =====
+ /* ===== SEND WEBSITE LINK (MODERN) =====
 const webChannel = client.channels.cache.get("1490732045083607040");
 if (webChannel) {
   const webEmbed = new EmbedBuilder()
@@ -236,8 +236,8 @@ https://hivemind-web-pi.vercel.app/
     .setTimestamp();
 
   webChannel.send({ embeds: [webEmbed] }).catch(console.error);
-}
-
+} 
+ */
   // ===== MODERN RULES EMBED =====
   const rulesChannel = client.channels.cache.get(RULES_CHANNEL_ID);
   if (rulesChannel) {
@@ -255,7 +255,6 @@ https://hivemind-web-pi.vercel.app/
         { name: '🌐 Promotion', value: '➭ No promotion of other servers.', inline: false },
         { name: '🔞 NSFW Content', value: '➭ No inappropriate/NSFW media including profile images.', inline: false },
         { name: '🤝 Respect', value: '➭ Treat others with respect. Be kind and considerate.', inline: false },
-        { name: '⚠️ Penalties', value: '1️⃣ 1st offense: Warning\n2️⃣ 2nd offense: 1 month timeout\n3️⃣ 3rd offense: Ban', inline: false }
       )
       .setFooter({ text: 'Please read carefully! ⚡' })
       .setTimestamp();
