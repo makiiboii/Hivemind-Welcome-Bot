@@ -39,7 +39,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
       await newState.setChannel(tempChannel);
 
       const welcomeEmbed = new EmbedBuilder()
-        .setColor('#00FFFF')
+        .setColor('#ecd346')
         .setTitle(`👋 Welcome ${newState.member.user.username}!`)
         .setDescription(`
 🎛️ **VC Commands:**
@@ -72,7 +72,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         sentHelp.add(key);
 
         const helpEmbed = new EmbedBuilder()
-          .setColor('#7CFC00')
+          .setColor('#ecd346')
           .setTitle(`🎛️ VC Commands`)
           .setDescription(`
 \`!limit [1-99]\` – Set max users  
@@ -99,7 +99,7 @@ client.on('guildMemberAdd', member => {
   if (!channel) return;
 
   const welcomeEmbed = new EmbedBuilder()
-    .setColor('#FF69B4')
+    .setColor('#ecd346')
     .setTitle(`🎉 Welcome ${member.user.username} to the server!`)
     .setDescription(`We hope you enjoy your stay! Check out the channels and commands.`)
     .setThumbnail(member.displayAvatarURL({ dynamic: true }))
@@ -210,24 +210,38 @@ client.on('messageCreate', async (message) => {
 client.once('clientReady', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 
-  // ===== SEND WEBSITE LINK =====
-const webChannel = client.channels.cache.get(1490732045083607040);
+ // ===== SEND WEBSITE LINK (MODERN) =====
+const webChannel = client.channels.cache.get("1490732045083607040");
 if (webChannel) {
   const webEmbed = new EmbedBuilder()
-    .setColor('#00BFFF')
-    .setTitle('🌐 Hivemind Website')
-    .setDescription('🚀 Check out our official website below:\n\n🔗 https://hivemind-web-pi.vercel.app/')
-    .setFooter({ text: 'Stay connected with us!' })
+    .setColor('#ecd346') // Discord blurple 🔥
+    .setAuthor({ name: '🌐 Hivemind Network', iconURL: client.user.displayAvatarURL() })
+    .setTitle('🚀 Official Website')
+    .setDescription(`
+> ✨ Welcome to **Hivemind Web**
+
+🔗 **Visit here:**
+https://hivemind-web-pi.vercel.app/
+
+💡 Stay updated, explore features, and connect with the community!
+    `)
+    .addFields(
+      { name: '📌 What’s inside?', value: '• Community Updates\n• Server Info\n• Future Features', inline: true },
+      { name: '⚡ Status', value: '🟢 Online & Active', inline: true }
+    )
+    .setThumbnail(client.user.displayAvatarURL())
+    .setImage('https://i.imgur.com/AfFp7pu.png') // optional banner (you can change/remove)
+    .setFooter({ text: 'Hivemind • Stay Connected', iconURL: client.user.displayAvatarURL() })
     .setTimestamp();
 
-  webChannel.send({ embeds: [webEmbed] }).catch(() => {});
+  webChannel.send({ embeds: [webEmbed] }).catch(console.error);
 }
 
   // ===== MODERN RULES EMBED =====
   const rulesChannel = client.channels.cache.get(RULES_CHANNEL_ID);
   if (rulesChannel) {
     const rulesEmbed = new EmbedBuilder()
-      .setColor('#FF4500')
+      .setColor('#ecd346')
       .setTitle('📜 Server Rules')
       .setDescription('Follow these rules to keep the server safe and fun for everyone!')
       .addFields(
