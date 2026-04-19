@@ -1,6 +1,7 @@
 const { PREFIX } = require('../config/config');
 const kickCommand = require('../commands/kick');
 const banCommand = require('../commands/ban');
+const rulesCommand = require('../commands/rules');
 const vcCommands = require('../commands/vc');
 
 module.exports = async (message) => {
@@ -18,6 +19,11 @@ module.exports = async (message) => {
     // Ban command
     if (command === 'ban') {
       return await banCommand.execute(message, args);
+    }
+
+     // Rules command
+    if (command === 'rules') {
+      return await rulesCommand.execute(message);
     }
 
     // VC commands (limit, lock, unlock, name, play)
